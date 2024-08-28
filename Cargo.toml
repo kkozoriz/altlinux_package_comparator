@@ -1,0 +1,11 @@
+[package]
+authors = ["Kozoriz Konstantin <kkozoriz7@yandex.ru>"]
+name = "altlinux_package_comparator"
+version = "0.1.0"
+edition = "2021"
+description = "This CLI tool compares binary packages between 'sisyphus' and 'p10' branches of the ALT Linux distribution."
+
+[dependencies]
+log = "0.4.22"
+env_logger = "0.11.5"
+dotenv = "0.15.0"
