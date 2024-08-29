@@ -1,73 +1,135 @@
+mod api;
+pub mod cli;
+mod package;
+
+use crate::api::fetch_packages;
+use crate::cli::CliCommands;
+use crate::package::Package;
+
 use log::info;
-use reqwest::{Error, Response};
-use serde::{Deserialize, Serialize};
-use std::collections::{hash_set::Difference, HashSet};
-use std::hash::{Hash, Hasher, RandomState};
+use std::{collections::HashSet, fs::File, path::PathBuf};
+use std::io::{self, Write};
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Package {
-    name: String,
-    version: String,
-    release: String,
-    arch: String,
-}
+type AppError = Box<dyn std::error::Error>;
 
-// TODO: Put it in a separate module
-impl PartialEq for Package {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl Eq for Package {}
-
-impl Hash for Package {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct ApiResponse {
-    packages: HashSet<Package>,
-}
-
-// TODO: Put it in a separate module
-async fn fetch_packages(branch: &str, arch: &str, url: &str) -> Result<HashSet<Package>, Error> {
-    let response: Response = match arch.is_empty() {
-        true => reqwest::get(format!("{}/{}", url, branch)).await?,
-        false => reqwest::get(format!("{}/{}?arch={}", url, branch, arch)).await?,
-    };
-    let api_response: ApiResponse = response.json().await?;
-
-    Ok(api_response.packages)
-}
-
-// TODO: Add the ability to output to console or file and await on operations
 pub async fn process_branch_packages(
     first_branch: &str,
     second_branch: &str,
     arch: &str,
     url: &str,
-) -> Result<(), Error> {
-    let first_packages_set: HashSet<Package> = fetch_packages(first_branch, arch, url).await?;
-    let second_packages_set: HashSet<Package> = fetch_packages(second_branch, arch, url).await?;
+    command: &CliCommands,
+    path: &Option<PathBuf>,
+) -> Result<(), AppError> {
+    // fetch the package lists for both branches
+    let (first_packages_set, second_packages_set): (HashSet<Package>, HashSet<Package>) = tokio::try_join!(
+        fetch_packages(first_branch, arch, url),
+        fetch_packages(second_branch, arch, url)
+    )?;
 
     info!("Start processing...");
-    let _diff_1: Difference<Package, RandomState> =
-        first_packages_set.difference(&second_packages_set);
-    let _diff_2: Difference<Package, RandomState> =
-        second_packages_set.difference(&first_packages_set);
+    let result = match command {
+        CliCommands::FirstBranchOnly => get_difference(&first_packages_set, &second_packages_set),
+        CliCommands::SecondBranchOnly => get_difference(&second_packages_set, &first_packages_set),
+        CliCommands::SisyphusNewer => get_newer_versions_set(&first_packages_set, &second_packages_set),
+    };
 
-    let mut version_le_vec: Vec<&Package> = vec![];
+    show_output_result(path, result)
+        .map_err(|err| Box::new(err) as AppError)
+}
 
-    for pkg1 in &first_packages_set {
-        if let Some(pkg2) = second_packages_set.get(pkg1) {
-            if pkg1.version > pkg2.version {
-                version_le_vec.push(pkg1)
+
+fn show_output_result(path: &Option<PathBuf>, result: HashSet<&Package>) -> io::Result<()> {
+    match path {
+        // If a file path is provided, write the result to the file
+        Some(file_path) => {
+            let mut file = File::create(file_path)?;
+            for package in result {
+                writeln!(file, "{:?}", package)?;
             }
+        }
+        // Otherwise, print in terminal
+        None => println!("{:#?}", result),
+    }
+    Ok(())
+}
+
+fn get_difference<'a>(
+    set_1: &'a HashSet<Package>,
+    set_2: &'a HashSet<Package>,
+) -> HashSet<&'a Package> {
+    set_1.difference(set_2).collect()
+}
+
+fn get_newer_versions_set<'a>(
+    first_packages: &'a HashSet<Package>,
+    second_packages: &'a HashSet<Package>,
+) -> HashSet<&'a Package> {
+    first_packages
+        .iter()
+        .filter_map(|pkg1| {
+            second_packages
+                .get(pkg1)
+                .filter(|pkg2| pkg1.version > pkg2.version)
+                .map(|_| pkg1)
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    fn create_package(name: &str, version: &str, release: &str, arch: &str) -> Package {
+        Package {
+            name: name.to_string(),
+            version: version.to_string(),
+            release: release.to_string(),
+            arch: arch.to_string(),
         }
     }
 
-    Ok(())
+    #[test]
+    fn test_get_difference() {
+        let pkg1 = create_package("pkg1", "1.0", "1", "x86_64");
+        let pkg2 = create_package("pkg2", "1.0", "1", "x86_64");
+        let pkg3 = create_package("pkg3", "1.0", "1", "x86_64");
+
+        let mut set_1 = HashSet::new();
+        set_1.insert(pkg1.clone());
+        set_1.insert(pkg2.clone());
+
+        let mut set_2 = HashSet::new();
+        set_2.insert(pkg2.clone());
+        set_2.insert(pkg3.clone());
+
+        let difference = get_difference(&set_1, &set_2);
+
+        assert_eq!(difference.len(), 1);
+        assert!(difference.contains(&pkg1));
+        assert!(!difference.contains(&pkg2));
+        assert!(!difference.contains(&pkg3));
+    }
+
+    #[test]
+    fn test_get_newer_versions_set() {
+        let pkg1_v1 = create_package("pkg1", "1.0", "1", "x86_64");
+        let pkg1_v2 = create_package("pkg1", "2.0", "1", "x86_64"); // newer version
+        let pkg2_v1 = create_package("pkg2", "1.0", "1", "x86_64");
+        let pkg2_v2 = create_package("pkg2", "1.0", "2", "x86_64"); // same version, different release
+
+        let mut first_set = HashSet::new();
+        first_set.insert(pkg1_v2.clone());
+        first_set.insert(pkg2_v1.clone());
+
+        let mut second_set = HashSet::new();
+        second_set.insert(pkg1_v1.clone());
+        second_set.insert(pkg2_v2.clone());
+
+        let newer_versions = get_newer_versions_set(&first_set, &second_set);
+
+        assert_eq!(newer_versions.len(), 1);
+        assert!(newer_versions.contains(&pkg1_v2));
+        assert!(!newer_versions.contains(&pkg2_v1));
+    }
 }
