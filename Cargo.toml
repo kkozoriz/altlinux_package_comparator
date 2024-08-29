@@ -4,13 +4,32 @@ name = "altlinux_package_comparator"
 version = "0.1.0"
 edition = "2021"
 description = "This CLI tool compares binary packages between 'sisyphus' and 'p10' branches of the ALT Linux distribution."
+readme = "README.md"
+repository = "https://github.com/kkozoriz/altlinux_package_comparator.git"
+
+[[bin]]
+name = "pkg-cmp"
+path = "src/main.rs"
 
 [dependencies]
 log = "0.4.22"
 env_logger = "0.11.5"
 dotenvy = "0.15.7"
-clap = { version =  "4.5.16", features = ["derive", "env"] }
-tokio = { version = "1.39.3", features = ["rt", "rt-multi-thread", "macros"] }
-reqwest = { version =  "0.12.7", features = ["json"] }
-serde = { version = "1.0.209", features = ["derive"] }
 serde_json = "1.0.127"
+tempfile = "3.12.0"
+
+[dependencies.clap]
+version = "4.5.16"
+features = ["default", "env", "derive"]
+
+[dependencies.tokio]
+version = "1.39.3"
+features = ["rt", "rt-multi-thread", "macros"]
+
+[dependencies.reqwest]
+version = "0.12.7"
+features = ["json"]
+
+[dependencies.serde]
+version = "1.0.209"
+features = ["derive"]
