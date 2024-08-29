@@ -11,6 +11,9 @@ repository = "https://github.com/kkozoriz/altlinux_package_comparator.git"
 name = "pkg-cmp"
 path = "src/main.rs"
 
+[profile.release]
+lto = true
+
 [dependencies]
 log = "0.4.22"
 env_logger = "0.11.5"
