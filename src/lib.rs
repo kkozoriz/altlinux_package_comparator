@@ -7,6 +7,8 @@ use crate::cli::CliCommands;
 use crate::package::Package;
 
 use log::info;
+use rpm::rpm_evr_compare;
+use std::cmp::Ordering;
 use std::io::{self, Write};
 use std::{collections::HashSet, fs::File, path::PathBuf};
 
@@ -39,16 +41,20 @@ pub async fn process_branch_packages(
 }
 
 fn show_output_result(path: &Option<PathBuf>, result: HashSet<&Package>) -> io::Result<()> {
+    let result_vec: Vec<&Package> = result.into_iter().collect();
+
+    // Serialize the vector into a pretty JSON string
+    let json_output: String =
+        serde_json::to_string_pretty(&result_vec).expect("Failed to serialize JSON");
+
     match path {
-        // If a file path is provided, write the result to the file
+        // If a file path is provided, write the JSON output to the file
         Some(file_path) => {
-            let mut file = File::create(file_path)?;
-            for package in result {
-                writeln!(file, "{:?}", package)?;
-            }
+            let mut file: File = File::create(file_path)?;
+            writeln!(file, "{}", json_output)?;
         }
-        // Otherwise, print in terminal
-        None => println!("{:#?}", result),
+        // Otherwise, print the JSON output to the terminal
+        None => println!("{}", json_output),
     }
     Ok(())
 }
@@ -69,7 +75,12 @@ fn get_newer_versions_set<'a>(
         .filter_map(|pkg1| {
             second_packages
                 .get(pkg1)
-                .filter(|pkg2| pkg1.version > pkg2.version)
+                .filter(|pkg2| {
+                    let vs_1 = &format!("{}-{}", pkg1.version, pkg1.release);
+                    let vs_2 = &format!("{}-{}", pkg2.version, pkg2.release);
+
+                    rpm_evr_compare(vs_1, vs_2) == Ordering::Greater
+                })
                 .map(|_| pkg1)
         })
         .collect()
