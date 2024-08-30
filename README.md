@@ -70,35 +70,45 @@ To find out more information about usage, enter:
 ```
 
 ```bash
-./target/release/pkg-cmp -o out.txt p11 p10 second-branch-only
+./target/release/pkg-cmp -o output.json p11 p10 second-branch-only
 ```
 
 ## Output
 
 You can put the option `-o` or `--output-file`, and then write the path to the file where you want to write the result of the command, if there is no existing file, a new file will be created, for example:
 ```bash
-./target/release/pkg-cmp -o out.txt first-branch-only
+./target/release/pkg-cmp -o out.json first-branch-only
 ```
 
-For example, let's print the first 10 lines of the resulting file to the console:
+Let's print resulting file to the console:
 
 ```bash
-head out.txt
+cat out.json
 ```
 
-Next, you can see the first 10 lines of output
+For example, just part of the output
 
-```bash
-Package { name: "lact", version: "0.5.5", release: "alt1", arch: "aarch64" }
-Package { name: "i586-drgn", version: "0.0.27", release: "alt1", arch: "x86_64-i586" }
-Package { name: "python3-module-rtmixer-debuginfo", version: "0.1.4", release: "alt1", arch: "aarch64" }
-Package { name: "libboost_python3-1.85.0-debuginfo", version: "1.85.0", release: "alt3", arch: "aarch64" }
-Package { name: "i586-qca-qt6-cyrus-sasl", version: "2.3.8", release: "alt1", arch: "x86_64-i586" }
-Package { name: "Lfunction-debuginfo", version: "2.0.5", release: "alt1", arch: "aarch64" }
-Package { name: "i586-libgupnp1.6", version: "1.6.6", release: "alt1.1", arch: "x86_64-i586" }
-Package { name: "i586-libspiro1", version: "20221101", release: "alt1_1", arch: "x86_64-i586" }
-Package { name: "i586-baresip-vp9", version: "3.14.0", release: "alt1", arch: "x86_64-i586" }
-Package { name: "hyprwayland-scanner", version: "0.4.0", release: "alt1", arch: "aarch64" }
+```json
+[
+  {
+    "name": "fonts-otf-gfs-bodoni-doc",
+    "version": "20070415",
+    "release": "alt4_32",
+    "arch": "noarch"
+  },
+  {
+    "name": "gem-bundler-audit-devel",
+    "version": "0.9.1",
+    "release": "alt1",
+    "arch": "noarch"
+  },
+  {
+    "name": "gnome-dosage",
+    "version": "1.6.6",
+    "release": "alt1",
+    "arch": "noarch"
+  }
+]
 ```
 
 Another example of the resulting file in .json format
