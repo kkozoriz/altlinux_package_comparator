@@ -1,15 +1,11 @@
-FROM rust:latest as builder
+FROM alt:p10
 
 WORKDIR /usr/src/
 
-RUN rustup target add aarch64-unknown-linux-gnu
+RUN apt-get update && apt-get install -y curl
 
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.toml
 COPY src src
 COPY .env .env
 
-RUN cargo build --target aarch64-unknown-linux-gnu
-
-FROM alt:p11
-
-COPY --from=builder /usr/src/target/aarch64-unknown-linux-gnu/debug/pkg-cmp /usr/local/bin/pkg-cmp
+CMD ["/bin/bash"]
