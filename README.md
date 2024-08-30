@@ -80,7 +80,7 @@ You can put the option `-o` or `--output-file`, and then write the path to the f
 ./target/release/pkg-cmp -o out.txt first-branch-only
 ```
 
-And the
+For example, let's print the first 10 lines of the resulting file to the console:
 
 ```bash
 head out.txt
