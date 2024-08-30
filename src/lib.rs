@@ -30,7 +30,7 @@ pub async fn process_branch_packages(
     let result = match command {
         CliCommands::FirstBranchOnly => get_difference(&first_packages_set, &second_packages_set),
         CliCommands::SecondBranchOnly => get_difference(&second_packages_set, &first_packages_set),
-        CliCommands::SisyphusNewer => get_newer_versions_set(&first_packages_set, &second_packages_set),
+        CliCommands::PackagesNewer => get_newer_versions_set(&first_packages_set, &second_packages_set),
     };
 
     show_output_result(path, result)
