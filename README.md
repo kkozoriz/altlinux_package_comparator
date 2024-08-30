@@ -37,15 +37,15 @@ libz.so.1 => /lib64/libz.so.1 (0x0000ffff9685e000)
 
 Therefore, in order for the software to run on `Alt Linux version 10`, the following packages must be installed, if they are not present:
 ```bash
- sudo apt-get update
+sudo apt-get update
 ```
 
 ```bash
- sudo apt-get install -y libssl-devel
+sudo apt-get install -y libssl-devel
 ```
 
 ```bash
- sudo apt-get install -y gcc
+sudo apt-get install -y gcc
 ```
 
 ```bash
