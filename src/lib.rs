@@ -7,8 +7,8 @@ use crate::cli::CliCommands;
 use crate::package::Package;
 
 use log::info;
-use std::{collections::HashSet, fs::File, path::PathBuf};
 use std::io::{self, Write};
+use std::{collections::HashSet, fs::File, path::PathBuf};
 
 type AppError = Box<dyn std::error::Error>;
 
@@ -30,13 +30,13 @@ pub async fn process_branch_packages(
     let result = match command {
         CliCommands::FirstBranchOnly => get_difference(&first_packages_set, &second_packages_set),
         CliCommands::SecondBranchOnly => get_difference(&second_packages_set, &first_packages_set),
-        CliCommands::PackagesNewer => get_newer_versions_set(&first_packages_set, &second_packages_set),
+        CliCommands::PackagesNewer => {
+            get_newer_versions_set(&first_packages_set, &second_packages_set)
+        }
     };
 
-    show_output_result(path, result)
-        .map_err(|err| Box::new(err) as AppError)
+    show_output_result(path, result).map_err(|err| Box::new(err) as AppError)
 }
-
 
 fn show_output_result(path: &Option<PathBuf>, result: HashSet<&Package>) -> io::Result<()> {
     match path {
