@@ -32,8 +32,8 @@ pub enum CliCommands {
     FirstBranchOnly,
     /// Find packages that are only in the second branch
     SecondBranchOnly,
-    /// Find packages where the version-release is newer in the sisyphus than in the p10
-    SisyphusNewer,
+    /// Find packages where the version-release is newer in the first branch than in the second branch
+    PackagesNewer,
 }
 
 impl Args {
