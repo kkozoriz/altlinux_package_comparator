@@ -4,15 +4,21 @@ mod package;
 
 use crate::api::fetch_packages;
 use crate::cli::CliCommands;
-use crate::package::Package;
+use crate::package::{rpmvercmp, Package};
 
 use log::info;
-use rpm::rpm_evr_compare;
 use std::cmp::Ordering;
 use std::io::{self, Write};
 use std::{collections::HashSet, fs::File, path::PathBuf};
 
 type AppError = Box<dyn std::error::Error>;
+const ERROR_CMP_MSG: &'static str = r#"
+Check the existence of the files:
+    /usr/lib64/librpm.so.7
+    /usr/lib64/librpm.so.7.0.1
+    /usr/lib64/librpmio.so.7
+    /usr/lib64/librpmio.so.7.0.1
+Programm failed with"#;
 
 pub async fn process_branch_packages(
     first_branch: &str,
@@ -79,7 +85,7 @@ fn get_newer_versions_set<'a>(
                     let vs_1 = &format!("{}-{}", pkg1.version, pkg1.release);
                     let vs_2 = &format!("{}-{}", pkg2.version, pkg2.release);
 
-                    rpm_evr_compare(vs_1, vs_2) == Ordering::Greater
+                    rpmvercmp(vs_1, vs_2).expect(ERROR_CMP_MSG) == Ordering::Greater
                 })
                 .map(|_| pkg1)
         })
