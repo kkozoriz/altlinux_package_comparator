@@ -47,7 +47,20 @@ sudo apt-get install -y libssl-devel
 ```bash
 sudo apt-get install -y gcc
 ```
+The programme also requires these files: 
+```bash
+/usr/lib64/librpm.so.7
+/usr/lib64/librpm.so.7.0.1
+/usr/lib64/librpmio.so.7
+/usr/lib64/librpmio.so.7.0.1
+```
 
+To check if they are available, run:
+```bash
+[ -f /usr/lib64/librpm.so.7 ] && [ -f /usr/lib64/librpm.so.7.0.1 ] && [ -f /usr/lib64/librpmio.so.7 ] && [ -f /usr/lib64/librpmio.so.7.0.1 ] && echo "All files exist" || echo "One or more files are missing"
+```
+
+Then run:
 ```bash
 cargo build --release
 ```
